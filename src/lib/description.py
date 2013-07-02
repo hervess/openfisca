@@ -23,6 +23,8 @@ This file is part of openFisca.
 
 from __future__ import division
 from src.lib.columns import Column, Prestation
+from src.lib.utils import period_times 
+import copy
 
 class MetaModelDescription(type):
     """
@@ -149,21 +151,33 @@ class ModelDescription(object):
         return self.to_string(debug=True)
 
 
-
 class Description(object):
-    def __init__(self, columns):
+    def __init__(self, columns, time_scale):
         super(Description, self).__init__()
         self.columns = {}
         self._col_names = set()
         for col in columns:
             self.columns[col.name] = col
             self._col_names.add(col.name)
+            if time_scale != 'year' and col.period != 'year':
+                for k in range(period_times[col.period]):
+                    period_name = col.name + str(k+1).zfill(2)
+                    self.columns[period_name] = copy.copy(col)
+                    self.columns[period_name].name = period_name + ''
+                    self._col_names.add(period_name)
+
             
     @property
     def col_names(self):
         return self._col_names
 
-    def get_col(self, col_name):
+    def get_col(self, col_name, period=None):
+        if period is not None:
+
+            try:
+                return self.columns[col_name + period]
+            except:
+                print "look for %s but don't find it and return %s" %(col_name + period, col_name)
         return self.columns[col_name]
 
     def has_col(self, col_name):

@@ -26,8 +26,8 @@ import numpy as np
 from pandas import DataFrame, Series, read_csv, HDFStore
 from src.lib.utils import of_import
 from src.lib.description import ModelDescription, Description
-from src.lib.utils import gen_output_data
-
+from src.lib.utils import gen_output_data, period_times 
+from src.lib.columns import FloatCol
 
 import pdb
 
@@ -46,7 +46,7 @@ class DataTable(object):
     Construct a SystemSf object is a set of Prestation objects
     """
     def __init__(self, model_description, survey_data = None, scenario = None, datesim = None,
-                  country = None, num_table = 1, subset=None, print_missing=True):
+                  country = None, num_table = 1, subset=None, print_missing=True, time_scale='year'):
         super(DataTable, self).__init__()
 
         # Init instance attribute
@@ -64,7 +64,8 @@ class DataTable(object):
 
         self.index = {}
         self._nrows = 0
-        self.print_missing=print_missing
+        self.print_missing = print_missing
+        self.time_scale = time_scale
         
         if datesim is None:
             raise Exception('InputDescription: datesim should be provided')
@@ -82,7 +83,7 @@ class DataTable(object):
         # Build the description attribute        
         if type(model_description) == type(ModelDescription):
             descr = model_description()
-            self.description = Description(descr.columns)
+            self.description = Description(descr.columns, self.time_scale)
         else:
             raise Exception("model_description should be an ModelDescription inherited class")
 
@@ -96,7 +97,7 @@ class DataTable(object):
 
     def load_data_from_survey(self, survey_data,
                               num_table = 1,
-                              subset=None, 
+                              subset=None, time_scale='year',
                               print_missing=True):
         self.survey_data = survey_data
         self.populate_from_survey_data(survey_data)
@@ -296,6 +297,15 @@ class DataTable(object):
                 if not col.name in self.table:
                     missing_col.append(col.name)
                     self.table[col.name] = col._default
+                    if self.time_scale != 'year' and col.period != 'year':
+                        try:    
+                            if isinstance(col,FloatCol):
+                                self.table[col.name] = \
+                                    self.table[col.name[:-2]] / period_times[col.period]
+                            else: 
+                                self.table[col.name] = self.table[col.name[:-2]]
+                        except:
+                            pass                                   
                 try:  
                     if self.table[col.name].isnull().any():
                         self.table[col.name].fillna(col._default, inplace=True)
@@ -307,10 +317,21 @@ class DataTable(object):
             self._nrows = self.table3['ind'].shape[0]            
             for ent in list_entities:
                 var_entity[ent] = [x for x in self.description.columns.itervalues() if x.entity == ent]
+
                 for col in var_entity[ent]:
                     if not col.name in self.table3[ent]:
                         missing_col.append(col.name)
                         self.table3[ent][col.name] = col._default
+                        # if colname exists but not per month, we try to create it:
+                        try:
+                            if self.time_scale != 'year' and col.period != 'year':
+                                if isinstance(col,FloatCol):
+                                    self.table3[ent][col.name] = \
+                                        self.table3[ent][col.name[:-2]] / period_times[col.period]
+                                else: 
+                                    self.table3[ent][col.name] = self.table3[col.name[:-2]]
+                        except:
+                            pass                                               
                     try:   
                         self.table3[ent][col.name] = self.table3[ent][col.name].astype(col._dtype)
                     except:
@@ -318,9 +339,6 @@ class DataTable(object):
                 if ent == 'foy':
                     self.table3[ent] = self.table3[ent].to_sparse(fill_value=0)       
                  
-            
-
-
         if missing_col:
             message = "%i input variables missing\n" % len(missing_col)
             messagef = ""
@@ -361,13 +379,13 @@ class DataTable(object):
 #        print self.table.get_dtype_counts()
         
             
-    def get_value(self, varname, entity = None, opt = None, sum_ = False):
+    def get_value(self, varname, entity = None, opt = None, sum_ = False, period = None):
         if self.num_table == 1:
-            return self._get_value1(varname, entity = entity, opt = opt, sum_ = sum_)
+            return self._get_value1(varname, entity = entity, opt = opt, sum_ = sum_, period = period)
         if self.num_table == 3:       
-            return self._get_value3(varname, entity = entity, opt = opt, sum_ = sum_)
+            return self._get_value3(varname, entity = entity, opt = opt, sum_ = sum_, period = period)
             
-    def _get_value1(self, varname, entity = None, opt = None, sum_ = False):
+    def _get_value1(self, varname, entity = None, opt = None, sum_ = False, period = None):
         '''
         Read the value in an array
         
@@ -385,11 +403,12 @@ class DataTable(object):
         sumout: array
         
         '''
-        col = self.description.get_col(varname)
+        col = self.description.get_col(varname,period)
+        #Note that if period is not None, col.name different of varname
         dflt = col._default
         dtyp = col._dtype
         ent = col.entity 
-        var = np.array(self.table[varname].values, dtype = col._dtype)
+        var = np.array(self.table[col.name].values, dtype = col._dtype)
         
         if entity is None:
             entity = "ind"
@@ -438,7 +457,7 @@ class DataTable(object):
                     sumout += val
                 return sumout
                         
-    def _get_value3(self, varname, entity=None, opt = None, sum_ = False):
+    def _get_value3(self, varname, entity=None, opt = None, sum_ = False, period = None):
         '''
         Read the value in an array and return it in an appropriate format
         
@@ -482,11 +501,14 @@ class DataTable(object):
         
         '''
         # caracteristics of varname
-        col = self.description.get_col(varname)
+
+        
+        col = self.description.get_col(varname,period)
+        
         dflt = col._default
         dtyp = col._dtype
         dent = col.entity
-        var = np.array(self.table3[dent][varname].values, dtype = col._dtype)
+        var = np.array(self.table3[dent][col.name].values, dtype = col._dtype)
         
         case = 0
         #TODO: Have a level of entites in the model description
@@ -589,7 +611,7 @@ class DataTable(object):
                     raise Exception("Cannot do anything but a sum from intermediate entity to the biggest one")
                 temp = np.ones(nb, dtype = dtyp)*dflt
                 idx_to = self.index[dent][entity]              
-                tab = self.table3[dent][varname] # same as var but in pandas
+                tab = self.table3[dent][col.name] # same as var but in pandas
                 if isinstance(tab[0],bool):
                     print "Warning: try to sum the boolean %s. How ugly is that? " %varname
                     #Note that we have isol = True (isol) iff there is at least one isol
@@ -654,8 +676,10 @@ class DataTable(object):
 
 
 class SystemSf(DataTable):
-    def __init__(self, model_description, param, defaultParam = None, datesim = None, country = None, num_table = 1):
-        DataTable.__init__(self, model_description, datesim = datesim, country = country, num_table = num_table)
+    def __init__(self, model_description, param, defaultParam = None, datesim = None, country = None,
+                  num_table = 1, time_scale='year'):
+        DataTable.__init__(self, model_description, datesim = datesim, country = country,
+                            num_table = num_table, time_scale = time_scale)
         self._primitives = set()
         self._param = param
         self._default_param = defaultParam
@@ -686,8 +710,6 @@ class SystemSf(DataTable):
             for ent in self.list_entities:
                 self.table3[ent] = self.table3[ent].append(other.table3[ent])
         return self
-        
-        
         
 
     def get_primitives(self):
@@ -821,7 +843,8 @@ class SystemSf(DataTable):
             return # Will calculate all and exit
 
         col = self.description.get_col(varname)
-
+        
+                
         if not self._primitives <= self._inputs.col_names:
             raise Exception('%s are not set, use set_inputs before calling calculate. Primitives needed: %s, Inputs: %s' % (self._primitives - self._inputs.col_names, self._primitives, self._inputs.col_names))
 
@@ -830,18 +853,35 @@ class SystemSf(DataTable):
         
         if not col._enabled:
             return
+        
+        month = None
+        if col.period == 'month' and self.time_scale == 'month':
+            try:
+                month = int(col.name[-2:])
+                month = str(month).zfill(2)
+                # month = col.name[-2:] but with exception if not value
+            except:
+                month_value =  {}
+                for k in range(period_times[col.period]):
+                    name_month = col.name + str(k+1).zfill(2)
+                    self.survey_calculate(varname = name_month)
+                    month_value[k+1] = self.get_value(varname, period = str(k+1).zfill(2))
+                self.set_value(varname, sum(month_value.values()), col._entity)
+                col._isCalculated = True
+                return  
 
         entity = col._entity
         if entity is None:
             entity = "ind"
         required = set(col.inputs)
         funcArgs = {}
+        
         for var in required:
             if var in self._inputs.col_names:
                 if var in col._option: 
-                    funcArgs[var] = self._inputs.get_value(var, entity, col._option[var])
+                    funcArgs[var] = self._inputs.get_value(var, entity, col._option[var], period= month)
                 else:
-                    funcArgs[var] = self._inputs.get_value(var, entity)
+                    funcArgs[var] = self._inputs.get_value(var, entity, period=month)
         
         for var in col._parents:
             parentname = var.name
@@ -870,7 +910,6 @@ class SystemSf(DataTable):
         except: 
             print varname
             self.set_value(varname, col._func(**funcArgs), entity)
-            
 
         col._isCalculated = True
         

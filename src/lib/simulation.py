@@ -51,6 +51,7 @@ class Simulation(object):
         self.subset = None
         self.print_missing = True
         self.chunk = 1
+        self.time_scale = 'year'
                 
     def _set_config(self, **kwargs):
         """
@@ -109,17 +110,17 @@ class Simulation(object):
                 in the microsimulation to compute some gross quantities not available in the initial data. 
                 parma_default is necessarily different from param when examining a reform
         """
-        reader = XmlReader(self.param_file, self.datesim)
+        reader = XmlReader(self.param_file, self.datesim, self.time_scale)
         rootNode = reader.tree
 
         if param_default is None:
-            self.P_default = Tree2Object(rootNode, defaut=True)
+            self.P_default = Tree2Object(rootNode, defaut=True, time_scale=self.time_scale)
             self.P_default.datesim = self.datesim
         else:
             self.P_default = param_default
             
         if param is None:
-            self.P = Tree2Object(rootNode, defaut=False)
+            self.P = Tree2Object(rootNode, defaut=False, time_scale=self.time_scale)
             self.P.datesim = self.datesim
         else:
             self.P = param
@@ -128,7 +129,7 @@ class Simulation(object):
     def _initialize_input_table(self):
         self.input_table = DataTable(self.InputDescription, datesim=self.datesim, 
                                     country=self.country, num_table = self.num_table, 
-                                    subset=self.subset,
+                                    subset=self.subset, time_scale=self.time_scale,
                                     print_missing=self.print_missing)
 
 
@@ -162,11 +163,13 @@ class Simulation(object):
         P, P_default = self.P, self.P_default
         input_table = self.input_table
         
-        output_table = SystemSf(self.OutputDescription, P, P_default, datesim = P.datesim, country = self.country, num_table = self.num_table)
+        output_table = SystemSf(self.OutputDescription, P, P_default, datesim = P.datesim,
+                                 country = self.country, num_table = self.num_table, time_scale = self.time_scale)
         output_table.set_inputs(input_table, country = self.country)
                                 
         if self.reforme:
-            output_table_default = SystemSf(self.OutputDescription, P_default, P_default, datesim = P.datesim, country = self.country, num_table = self.num_table)
+            output_table_default = SystemSf(self.OutputDescription, P_default, P_default, datesim = P.datesim,
+                                             country = self.country, num_table = self.num_table, time_scale = self.time_scale)
             output_table_default.set_inputs(input_table, country = self.country)
         else:
             output_table_default = output_table
@@ -244,16 +247,16 @@ class Simulation(object):
             self.var2label.update(v2l)
             self.var2enum.update(v2e)
 
-    def get_col(self, varname):
+    def get_col(self, varname, period=None):
         '''
         Looks for a column in inputs description, then in output_table description
         '''
         if self.input_table.description.has_col(varname):
-            return self.input_table.description.get_col(varname)
+            return self.input_table.description.get_col(varname, period)
         
         if self.output_table is not None:
             if self.output_table.description.has_col(varname):
-                return self.output_table.description.get_col(varname)
+                return self.output_table.description.get_col(varname, period)
         else:
             print "Variable %s is absent from both inputs and output_table" % varname
             return None
@@ -442,7 +445,8 @@ class ScenarioSimulation(Simulation):
         
         self._compute(decomp_file=self.decomp_file)
         if alter:
-            output_table = SystemSf(self.OutputDescription, self.P, self.P_default, datesim = self.P.datesim, country = self.country, num_table = self.num_table)
+            output_table = SystemSf(self.OutputDescription, self.P, self.P_default, datesim = self.P.datesim,
+                                     country = self.country, num_table = self.num_table, time_scale = self.time_scale)
             output_table.set_inputs(input_table_alter, country = self.country)
             output_table.decomp_file = self.decomp_file
             output_table.disable(self.disabled_prestations)
@@ -468,10 +472,12 @@ class ScenarioSimulation(Simulation):
         P_default = self.P_default     
         P         = self.P  
         
-        self.output_table = SystemSf(self.OutputDescription, P, P_default, datesim = P.datesim, country = self.country)
+        self.output_table = SystemSf(self.OutputDescription, P, P_default, datesim = P.datesim,
+                                      country = self.country, time_scale = self.time_scale)
         self.output_table.set_inputs(self.input_table, country = self.country)
                 
-        output_alter = SystemSf(self.OutputDescription, P, P_default, datesim = P.datesim, country = self.country)
+        output_alter = SystemSf(self.OutputDescription, P, P_default, datesim = P.datesim, 
+                                time_scale = self.time_scale, country = self.country)
         output_alter.set_inputs(input_table_alter, country = self.country)
     
         self.output_table.disable(self.disabled_prestations)
@@ -653,7 +659,7 @@ class SurveySimulation(Simulation):
         if len(self.input_table.table)==0:
             self.input_table.load_data_from_survey(self.survey_filename,  
                                                num_table = self.num_table,
-                                               subset=self.subset,
+                                               subset=self.subset, time_scale=self.time_scale,
                                                print_missing=self.print_missing)
             
         if self.chunk == 1:     

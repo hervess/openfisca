@@ -27,6 +27,7 @@ import numpy as np
 from bisect import bisect_right
 from pandas import DataFrame
 
+period_times = {'month':12, 'bimonth':6, 'quarter':4, 'triannual':3, 'semester':2, 'year':1}
 
 class Enum(object):
     def __init__(self, varlist, start = 0):
@@ -506,8 +507,8 @@ class BaremeDict(dict):
                     self[key] = bar
                 elif isinstance(bar, Tree2Object):
                     new = BaremeDict(key, bar)
-                    self[key] = new   
-        
+                    self[key] = new
+                       
             
 def combineBaremes(bardict, name = None):
     '''
