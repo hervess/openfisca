@@ -87,7 +87,7 @@ class OutputDescription(ModelDescription):
     
     # Salaires
     type_sal = EnumPresta(cs._type_sal)
-    salbrut = Prestation(cs._salbrut)
+    salbrut = Prestation(cs._salbrut, period='month')
     sal_h_b = Prestation(cs._sal_h_b)
     
     cotpat_contrib = Prestation(cs._cotpat_contrib)

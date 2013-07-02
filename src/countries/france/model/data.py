@@ -33,14 +33,14 @@ class InputDescription(ModelDescription):
     quifoy  = EnumCol(QUIFOY)
     quifam  = EnumCol(QUIFAM)
     
-    sali = IntCol(label="Salaire imposable", val_type="monetary") #(f1aj, f1bj, f1cj, f1dj, f1ej)
+    sali = FloatCol(label="Salaire imposable", val_type="monetary", period="month") #(f1aj, f1bj, f1cj, f1dj, f1ej)
     choi = IntCol(label=u"Chômage imposable", val_type="monetary") # (f1ap, f1bp, f1cp, f1dp, f1ep)
     rsti = IntCol(label="Retraite imposable", val_type="monetary") # (f1as, f1bs, f1cs, f1ds, f1es)
     fra  = IntCol(label="Frais réels",val_type="monetary") # (f1ak, f1bk, f1ck, f1dk, f1ek)
 
     alr  = IntCol(label = u"Pension alimentaire reçue", val_type="monetary") # (f1ao, f1bo, f1co, f1do, f1eo)
     
-    hsup = IntCol( label = "Heures supplémentaires", val_type="monetary")  # (f1au, f1bu, f1cu, f1du, f1eu)
+    hsup = FloatCol( label = "Heures supplémentaires", val_type="monetary", period="month")  # (f1au, f1bu, f1cu, f1du, f1eu)
     inv  = BoolCol(label = u'Invalide')
     alt  = BoolCol(label = u'Garde alternée')
     cho_ld = BoolCol(label = 'Chômeur de longue durée') # (f1ai, f1bi, f1ci, f1di, f1ei)

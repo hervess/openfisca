@@ -222,6 +222,8 @@ def _salbrut(sali, hsup, type_sal, _defaultP):
     plaf_ss = 12*_defaultP.cotsoc.gen.plaf_ss
 
     sal = scaleBaremes(BaremeDict('sal', _defaultP.cotsoc.sal), plaf_ss)
+    import pdb
+#     pdb.set_trace()
     csg = scaleBaremes(BaremeDict('csg', _defaultP.csg), plaf_ss)
     
     sal['noncadre'].update(sal['commun'])
@@ -248,6 +250,9 @@ def _salbrut(sali, hsup, type_sal, _defaultP):
     salbrut = (brut_nca*(type_sal == CAT['noncadre']) + 
                brut_cad*(type_sal == CAT['cadre']) + 
                brut_fon*(type_sal == CAT['etat_t']) )
+    
+    #TODO: effacer ce test
+    salbrut = salbrut + (salbrut==0) * _defaultP.csg.chom.min_exo
     
     return salbrut + hsup
 

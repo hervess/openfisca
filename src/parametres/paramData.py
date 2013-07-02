@@ -27,25 +27,33 @@ from src.gui.qt.compat import from_qvariant
 from src.gui.config import CONF
 from datetime import datetime
 
-from src.lib.utils import Bareme
+from src.lib.utils import Bareme, period_times
 
 
 class Tree2Object(object):
-    def __init__(self, node, defaut = False):
+    def __init__(self, node, defaut = False, time_scale='year'):
         for child in node._children:
             setattr(self, child.code, child)
         for a, b in self.__dict__.iteritems():
             if b.typeInfo == 'CODE' or b.typeInfo == 'BAREME':
-                if defaut:
-                    setattr(self,a, b.default)
+                if b.typeInfo == 'CODE':
+                    time_ratio = period_times[b.typePeriod] / period_times[time_scale]
+                    if defaut:
+                        setattr(self,a, b.default * time_ratio)
+                    else:
+                        setattr(self,a, b.value * time_ratio)
                 else:
-                    setattr(self,a, b.value)
+                    if defaut:
+                        setattr(self,a, b.default)
+                    else:
+                        setattr(self,a, b.value)                          
+                        
             else:
                 setattr(self,a, Tree2Object(b, defaut))
 
 
 class XmlReader(object):
-    def __init__(self, paramFile, date = None):
+    def __init__(self, paramFile, date = None, time_scale='year'):
         super(XmlReader, self).__init__()
         self._doc = minidom.parse(paramFile)        
         self.tree = Node('root')
@@ -82,9 +90,12 @@ class XmlReader(object):
                     desc = element.getAttribute('description')
                     valueFormat = element.getAttribute('format')
                     valueType   = element.getAttribute('type')
+                    typePeriod  = element.getAttribute('period')
+                    if typePeriod == '':
+                        typePeriod = 'year'
                     val = self.handleValues(element, self._date)
-                    if not val is None:
-                        node = CodeNode(code, desc, float(val), parent, valueFormat, valueType)
+                    if val is not None:
+                        node = CodeNode(code, desc, float(val), parent, valueFormat, valueType, typePeriod)
                 else:
                     code = element.getAttribute('code')
                     desc = element.getAttribute('description')
@@ -115,6 +126,7 @@ class Node(object):
         self.valueFormat = 'none'
         self.valueType = 'none'
         self.typeInfo = 'NODE'
+        self.typePeriod = 'year'
         
         if parent is not None:
             parent.addChild(self)
@@ -278,11 +290,12 @@ class Node(object):
         if column is 0: pass
     
 class CodeNode(Node):
-    def __init__(self, code, description, value, parent, valueFormat = 'none', valueType = 'none'):
+    def __init__(self, code, description, value, parent, valueFormat = 'none', valueType = 'none', typePeriod = 'year'):
         super(CodeNode, self).__init__(code, description, parent)
         self.value = value
         self.default = value
         self.typeInfo = 'CODE'
+        self.typePeriod = typePeriod
         self.valueFormat = valueFormat
         self.valueType   = valueType
 

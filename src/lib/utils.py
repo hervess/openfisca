@@ -533,7 +533,6 @@ def scaleBaremes(bar_dict, factor):
     Scales all the Bareme in the BarColl
     '''
 
-    
     if isinstance(bar_dict, Bareme):
         return bar_dict.multSeuils(factor)
     
@@ -546,6 +545,7 @@ def scaleBaremes(bar_dict, factor):
             elif isinstance(bar, BaremeDict):
                 out[key] = scaleBaremes(bar, factor)
             else:
+                # never happens 
                 setattr(out, key, bar)
         return out
     
