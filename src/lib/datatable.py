@@ -113,7 +113,6 @@ class DataTable(object):
                       'nb': self._nrows}}
 
         for entity in entities:
-            enum = self.description.get_col('qui'+entity).enum
             try:
                 if self.num_table == 1:
                     idx = getattr(self.table, 'id'+entity).values
@@ -123,7 +122,6 @@ class DataTable(object):
                     qui = getattr(self.table3['ind'], 'qui'+entity).values
                     
                 enum = self.description.get_col('qui'+entity).enum
-                    
             except:
                 raise Exception('DataTable needs columns %s and %s to build index with entity %s' %
                           ('id' + entity, 'qui' + entity, entity))
@@ -133,6 +131,7 @@ class DataTable(object):
             idxlist = np.unique(idx)
             
             if self.num_table == 3:
+                print len(idxlist) ,len(self.table3[entity])
                 if len(idxlist) != len(self.table3[entity]):
                     print "Warning: list of ident is not consistent for %s" %entity
                     print self.survey_year, len(idxlist), len(self.table3[entity])
@@ -144,13 +143,15 @@ class DataTable(object):
                         idxlist = idxent
                 # Generates index for the entity of each individual
                 self.index['ind'][entity] = np.searchsorted(idxlist, idx)
-                        
+                                        
             dct['nb'] = len(idxlist)
 
             for full, person in enum:
                 idxIndi = np.sort(np.squeeze((np.argwhere(qui == person))))
-#                if (person == 0) and (dct['nb'] != len(idxIndi)):
-#                    raise Exception('Invalid index for %s: There is %i %s and %i %s' %(entity, dct['nb'], entity, len(idxIndi), full))
+                if (person == 0) and (dct['nb'] != len(idxIndi)):
+                    prob = [x for x in idxlist if x not in idx[idxIndi]]
+                    print "Exceptions for ", entity," are :", prob
+                    raise Exception('Invalid index for %s: There is %i %s and %i %s' %(entity, dct['nb'], entity, len(idxIndi), full))
                 idxUnit = np.searchsorted(idxlist, idx[idxIndi])
                 temp = {'idxIndi':idxIndi, 'idxUnit':idxUnit}
                 dct.update({person: temp}) 
