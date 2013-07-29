@@ -39,7 +39,7 @@ def compar_num_table():
         yr = str(year)
 #        fname = "Agg_%s.%s" %(str(yr), "xls")
         simu = SurveySimulation()
-        simu.set_config(year = yr, country = country)
+        simu.set_config(year = yr, country = country, survey_filename=None, num_table=3)
         simu.set_param()
         import time
         
@@ -58,7 +58,7 @@ def compar_num_table():
         sous_ech =  [6036028, 6028397, 6019248]
             
         sous_ech = None
-        simu.set_survey(num_table=3, subset=sous_ech)
+#         simu.set_survey(num_table=3, subset=sous_ech)
         simu.compute()
  
         agg3 = Aggregates()
@@ -78,7 +78,7 @@ def compar_num_table():
         fname_all = os.path.join(destination_dir, 'agg3.xlsx') 
         agg3.aggr_frame.to_excel(fname_all, yr, index= False, header= True)
 
-
+        simu.output_table.propagate_to_members(varname='aah', entity='ind')
 
         # export to csv to run compar in R
         for ent in ['ind','men','foy','fam']:
@@ -98,9 +98,9 @@ def compar_num_table():
 
         
         deb1 = time.clock()
-        simu.set_survey(num_table=1, subset=sous_ech)
+        simu.set_config(year = yr, country = country, survey_filename=None, num_table=1)
         simu.compute()
-        
+  
         agg = Aggregates()
         agg.set_simulation(simu)
         agg.compute()

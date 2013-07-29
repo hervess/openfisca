@@ -573,8 +573,11 @@ class DataTable(object):
             else: 
                 #here if opt is not None, we know we are dealing with entity = 'ind'
                 for person in opt: 
-                    idx_person = self.index[dent][person]
-                    temp[idx_person['idxIndi']] = var[idx_person['idxUnit']]
+                    try:
+                        idx_person = self.index[dent][person]
+                        temp[idx_person['idxIndi']] = var[idx_person['idxUnit']]
+                    except:
+                        pdb.set_trace()
                 return temp 
             
         elif case == 3 :   

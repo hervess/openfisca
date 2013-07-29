@@ -315,6 +315,9 @@ class Bareme(object):
         for i in range(self.nb):
             b.addTranche(factor*self.seuils[i], self.taux[i])
         return b
+        ##  why not :
+        #    for i in range(self._nb):
+        #        self.setTaux(i,factor*self.seuil[i])
         
     def addBareme(self, bareme):
         if bareme.nb>0: # Pour ne pas avoir de problèmes avec les barèmes vides
@@ -512,7 +515,7 @@ class BaremeDict(dict):
             
 def combineBaremes(bardict, name = None):
     '''
-    Combine all the Baremes in the BaremeDict in a signle Bareme
+    Combine all the Baremes in the BaremeDict in a single Bareme
     '''
     if name is None:
         name = 'Combined ' + bardict._name
