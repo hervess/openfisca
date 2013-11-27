@@ -8,7 +8,21 @@
 # # # OpenFisca
 
 from pandas import DataFrame, concat
-from numpy import logical_not as not_
+
+def assert_variable_inrange(name, wrange, table): 
+    '''
+    Assert if transformed variables are in correct range
+    wrange is a list like [minimum, maximum]
+    '''
+    temp = (table[table[name].notnull()])
+    range_1 = wrange[0]
+    range_2 = wrange[1]
+    for v in temp[name]:
+        assert v in range(range_1, range_2), Exception('some non-null values for %s not in wanted %s: %s' %(name, str(wrange), str(v)))
+        
+def count_NA(name,table): 
+    '''Counts the number of Na's in a specified axis'''
+    print "count of NA's for %s is %s" %(name, str(sum(table[name].isnull())))
 
 def print_id(df):
     try:
@@ -81,9 +95,9 @@ def control(dataframe, verbose=False, verbose_columns=None, debug=False, verbose
         
     if not(debug): 
         assert not(dataframe.duplicated().any()), 'présence de lignes en double dans la dataframe'
-        assert not_(dataframe.duplicated(cols=['idfoy', 'quifoy'])).all(), 'duplicate of tuple idfoy/quifoy' 
-        assert not_(dataframe.duplicated(cols=['idmen', 'quimen'])).all(), 'duplicate of tuple idmen/quimen'
-        assert not_(dataframe.duplicated(cols=['idfam', 'quifam'])).all(), 'duplicate of tupli idfam/quifam'
+        assert ~(dataframe.duplicated(cols=['idfoy', 'quifoy'])).all(), 'duplicate of tuple idfoy/quifoy' 
+        assert ~(dataframe.duplicated(cols=['idmen', 'quimen'])).all(), 'duplicate of tuple idmen/quimen'
+        assert ~(dataframe.duplicated(cols=['idfam', 'quifam'])).all(), 'duplicate of tupli idfam/quifam'
 
     empty_columns = []
     for col in dataframe.columns:
