@@ -73,7 +73,7 @@ def _charge_loyer(loyer, nbptr, _P, _option = {'loyer': ALL}):
     return 12*_P.ir.autre.charge_loyer.active*min_(sum(loyer.itervalues()), plafond)
 
 
-def _charges_deduc(cd1, cd2, charges_deduc_reforme ):
+def _charges_deduc(cd1, cd2, charges_deduc_reforme):
     return cd1 + cd2 + charges_deduc_reforme
 
 

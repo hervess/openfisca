@@ -4,6 +4,8 @@ Created on 9 juil. 2013
 @author: benjello
 '''
 
+from __future__ import division
+
 from src.lib.simulation import ScenarioSimulation
 from src.lib.simulation import SurveySimulation
 from src.plugins.survey.aggregates import Aggregates
@@ -14,34 +16,55 @@ country = 'france'
 # fname_all = "aggregates_inflated_loyers.xlsx"
 # fname_all = os.path.join(destination_dir, fname_all)              
 
-
-
-def test_case(year):
+def test_case(year, save = False):
 
     country = 'france'
-    simulation = ScenarioSimulation()
     salaires_nets = 1120.43*12
-    simulation.set_config(year = year, country = country, reforme=True,
-                    nmen = 4, maxrev = salaires_nets*3, xaxis = 'sali')
+    nmen = 20
+    nmax = 3
     
-    # Adding a husband/wife on the same tax sheet (foyer)
-    simulation.scenario.addIndiv(1, datetime(1975,1,1).date(), 'conj', 'part') 
-#     simulation.scenario.addIndiv(2, datetime(2000,1,1).date(), 'pac', 'enf')
-#     simulation.scenario.addIndiv(3, datetime(2000,1,1).date(), 'pac', 'enf')
+    for reforme in [False, True]:
+        simulation = ScenarioSimulation()
+        simulation.set_config(year = year, country = country, reforme=reforme,
+                        nmen = nmen, maxrev = salaires_nets*nmax, xaxis = 'sali')
+        
+        # Adding a husband/wife on the same tax sheet (foyer)
+        simulation.scenario.addIndiv(1, datetime(1975,1,1).date(), 'conj', 'part') 
+    #     simulation.scenario.addIndiv(2, datetime(2000,1,1).date(), 'pac', 'enf')
+    #     simulation.scenario.addIndiv(3, datetime(2000,1,1).date(), 'pac', 'enf')
+        
+        # Loyers set statut d'occupation
+        simulation.scenario.menage[0].update({"loyer": 1120.43/3}) 
+        simulation.scenario.menage[0].update({"so": 4})
     
-    # Loyers set statut d'occupation
-    simulation.scenario.menage[0].update({"loyer": 310}) 
-    simulation.scenario.menage[0].update({"so": 4})
+        simulation.set_param()
+        simulation.P.ir.autre.charge_loyer.active = 1
+        simulation.P.ir.autre.charge_loyer.plaf = 1000
+        simulation.P.ir.autre.charge_loyer.plaf_nbp = 0 
+    
+        reduc = 0
+        print simulation.P.ir.bareme
+        print simulation.P.ir.bareme.nb
+        for i in range(2, simulation.P.ir.bareme.nb):
+            simulation.P.ir.bareme.setSeuil(i, simulation.P.ir.bareme.seuils[i]*(1-reduc) )
+    
+        print simulation.P.ir.bareme
+        print simulation.P.ir.bareme.nb
+    
+    
+        df = simulation.get_results_dataframe()
+        print df.to_string()
+        
+        #Save example to excel
+        if save:
+            destination_dir = "c:/users/utilisateur/documents/"
+            fname = "Trannoy_reforme.%s" %"xls"    
+            if reforme:
+                df.to_excel(destination_dir  + fname, sheet_name="difference")
+            else:
+                df.to_excel(destination_dir  + fname, sheet_name="Trannoy")
 
-    simulation.set_param()
-    simulation.P.ir.autre.charge_loyer.active = 1  
-    df = simulation.get_results_dataframe()
-    print df.to_string()
-    
-    # Save example to excel
-    # destination_dir = "c:/users/utilisateur/documents/"
-    # fname = "Example_%s.%s" %(str(yr), "xls")    
-    # df.to_excel(destination_dir = "c:/users/utilisateur/documents/" + fname)
+        
 
 def survey_case(year):
 
@@ -49,15 +72,15 @@ def survey_case(year):
     simulation = SurveySimulation()
     simulation.set_config(year = year, country = country, num_table=1, reforme=True)
     simulation.set_param()
-    simulation.P.ir.autre.charge_loyer.plaf = 500
-    simulation.P.ir.autre.charge_loyer.active = 1  
+    simulation.P.ir.autre.charge_loyer.plaf = 833
+    simulation.P.ir.autre.charge_loyer.active = 1
     simulation.P.ir.autre.charge_loyer.plaf_nbp = 0 
     
     # plaf=1000 plaf_nbp=0: -42160, =1: -41292
     # plaf=500  plaf_nbp=0: -43033, =1: -42292
     
     # Bareme threshold reduction in pct
-    reduc = .1
+    reduc = 0
     print simulation.P.ir.bareme
     print simulation.P.ir.bareme.nb
     for i in range(2, simulation.P.ir.bareme.nb):
@@ -78,6 +101,6 @@ def survey_case(year):
 
 
 if __name__ == '__main__':
-#    survey_case(2010)
+#    survey_case(2009)
     test_case(2011)
     

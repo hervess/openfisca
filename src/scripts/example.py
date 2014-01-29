@@ -43,7 +43,7 @@ def test_case(year):
 
 def survey_case(year):
      
-
+    country = 'france'
 #        fname = "Agg_%s.%s" %(str(yr), "xls")
     simulation = SurveySimulation()
     simulation.set_config(year = year, country = country)

@@ -676,10 +676,10 @@ def taux_exo_fillon(sal_h_b, P):
     Exonération Fillon
     http://www.securite-sociale.fr/comprendre/dossiers/exocotisations/exoenvigueur/fillon.htm
     '''
-    # TODO Ainsi, à compter du 1er juillet 2007, le taux d’exonération des employeurs de 19 salariés au plus
+    # TODO: Ainsi, à compter du 1er juillet 2007, le taux d’exonération des employeurs de 19 salariés au plus
     # passera pour une rémunération horaire égale au SMIC de 26 % à 28,1 %.
     
-    # TODO la divison par zéro engendre un warning
+    # TODO: la divison par zéro engendre un warning
     # Le montant maximum de l’allègement dépend de l’effectif de l’entreprise. 
     # Le montant est calculé chaque année civile, pour chaque salarié ; 
     # il est égal au produit de la totalité de la rémunération annuelle telle que visée à l’article L. 242-1 du code de la Sécurité sociale par un coefficient. 
